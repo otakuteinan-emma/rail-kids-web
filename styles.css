@@ -27,7 +27,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -285,6 +286,81 @@ h1 {
   padding: 18px;
 }
 
+.profile-panel {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.profile-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.profile-head span {
+  min-height: 30px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--green);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.profile-panel label,
+.day-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-panel label + label {
+  margin-top: 10px;
+}
+
+.profile-panel label span,
+.day-picker span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.profile-panel select,
+.profile-panel input,
+.day-picker select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.profile-create {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.profile-create button {
+  min-height: 42px;
+  border-radius: 8px;
+  border: 0;
+  color: #ffffff;
+  background: var(--blue);
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .meter {
   display: flex;
   align-items: center;
@@ -303,26 +379,9 @@ h1 {
 }
 
 .day-picker {
-  display: grid;
-  gap: 8px;
   margin-top: 14px;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--line);
-}
-
-.day-picker span {
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.day-picker select {
-  min-height: 44px;
-  padding: 0 10px;
-  border: 2px solid var(--line);
-  border-radius: 8px;
-  background: #ffffff;
-  color: var(--ink);
-  font-weight: 900;
 }
 
 .facts h2 {

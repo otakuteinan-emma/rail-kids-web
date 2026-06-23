@@ -2,6 +2,21 @@ const CYCLE_DAYS = 60;
 const QUESTIONS_PER_DAY = 10;
 const START_DATE = new Date("2026-06-23T00:00:00+08:00");
 
+const gradeConfig = {
+  grade1: {
+    label: "一年级",
+    mathBoost: 0,
+    englishLevel: "starter",
+    chineseLevel: "basic"
+  },
+  grade2: {
+    label: "二年级预备",
+    mathBoost: 8,
+    englishLevel: "bridge",
+    chineseLevel: "bridge"
+  }
+};
+
 const facts = {
   cr450: "CR450 是中国新一代高速动车组样车，面向更高速度等级研发。这里把它作为“最新高铁明星”来设计题目，但语数英能力要求仍围绕一、二年级衔接。",
   cr400: "复兴号 CR400 系列是中国高铁 350 km/h 运营的代表车型之一。它是动车组，许多车厢都有动力，像一个配合很好的车队。",
@@ -95,6 +110,12 @@ const els = {
   stations: document.querySelector("#stations"),
   train: document.querySelector("#train"),
   scoreLabel: document.querySelector("#scoreLabel"),
+  profileSelect: document.querySelector("#profileSelect"),
+  activeGradeSelect: document.querySelector("#activeGradeSelect"),
+  profileNameInput: document.querySelector("#profileNameInput"),
+  profileGradeSelect: document.querySelector("#profileGradeSelect"),
+  addProfileBtn: document.querySelector("#addProfileBtn"),
+  activeGradeLabel: document.querySelector("#activeGradeLabel"),
   daySelect: document.querySelector("#daySelect"),
   subjectTag: document.querySelector("#subjectTag"),
   questionCount: document.querySelector("#questionCount"),
@@ -111,6 +132,8 @@ const els = {
 };
 
 const state = {
+  profiles: [],
+  activeProfileId: "",
   selectedDay: 1,
   todayQuestions: [],
   current: 0,
@@ -132,6 +155,46 @@ function daysBetween(start, end) {
 function activeCycleDay(date = new Date()) {
   const offset = daysBetween(START_DATE, date);
   return ((offset % CYCLE_DAYS) + CYCLE_DAYS) % CYCLE_DAYS + 1;
+}
+
+function profileKey() {
+  return "railKidsProfiles-v1";
+}
+
+function activeProfileKey() {
+  return "railKidsActiveProfile-v1";
+}
+
+function createProfile(name, grade = "grade1") {
+  return {
+    id: `p-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+    name: name.trim().slice(0, 10) || "小小调度员",
+    grade: gradeConfig[grade] ? grade : "grade1",
+    createdAt: new Date().toISOString()
+  };
+}
+
+function readProfiles() {
+  try {
+    const profiles = JSON.parse(localStorage.getItem(profileKey())) || [];
+    return profiles.filter((profile) => profile && profile.id && profile.name);
+  } catch {
+    localStorage.removeItem(profileKey());
+    return [];
+  }
+}
+
+function saveProfiles() {
+  localStorage.setItem(profileKey(), JSON.stringify(state.profiles));
+  localStorage.setItem(activeProfileKey(), state.activeProfileId);
+}
+
+function activeProfile() {
+  return state.profiles.find((profile) => profile.id === state.activeProfileId) || state.profiles[0];
+}
+
+function activeGrade() {
+  return activeProfile()?.grade || "grade1";
 }
 
 function optionSet(answer, distractors) {
@@ -163,11 +226,12 @@ function hashText(text) {
   return Array.from(text).reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) % 1000003, 7);
 }
 
-function makeChoiceQuestion({ day, slot, subject, skill, train, title, text, answer, choices, tip }) {
+function makeChoiceQuestion({ day, slot, grade, subject, skill, train, title, text, answer, choices, tip }) {
   return {
-    id: `D${String(day).padStart(2, "0")}-Q${String(slot + 1).padStart(2, "0")}`,
+    id: `${grade || "grade1"}-D${String(day).padStart(2, "0")}-Q${String(slot + 1).padStart(2, "0")}`,
     day,
     slot,
+    grade: grade || "grade1",
     subject,
     skill,
     train,
@@ -192,16 +256,17 @@ function mathOptions(answer, span = 12) {
   return [...values].slice(0, 4).map(String);
 }
 
-function makeBeginnerEnglishLetterQuestion(day, slot, train) {
+function makeBeginnerEnglishLetterQuestion(day, slot, grade, train) {
   const item = englishLetters[(day - 1) % englishLetters.length];
   const next = englishLetters[day % englishLetters.length];
   const another = englishLetters[(day + 7) % englishLetters.length];
-  const mode = (day - 1) % 4;
+  const mode = grade === "grade2" ? (day + 1) % 4 : (day - 1) % 4;
 
   if (mode === 0) {
     return makeChoiceQuestion({
       day,
       slot,
+      grade,
       subject: "英语",
       skill: "字母形状识别",
       train,
@@ -217,6 +282,7 @@ function makeBeginnerEnglishLetterQuestion(day, slot, train) {
     return makeChoiceQuestion({
       day,
       slot,
+      grade,
       subject: "英语",
       skill: "大小写匹配",
       train,
@@ -233,6 +299,7 @@ function makeBeginnerEnglishLetterQuestion(day, slot, train) {
     return makeChoiceQuestion({
       day,
       slot,
+      grade,
       subject: "英语",
       skill: "首字母意识",
       train,
@@ -247,6 +314,7 @@ function makeBeginnerEnglishLetterQuestion(day, slot, train) {
   return makeChoiceQuestion({
     day,
     slot,
+    grade,
     subject: "英语",
     skill: "字母顺序感",
     train,
@@ -258,16 +326,17 @@ function makeBeginnerEnglishLetterQuestion(day, slot, train) {
   });
 }
 
-function makeBeginnerEnglishContextQuestion(day, slot, train) {
+function makeBeginnerEnglishContextQuestion(day, slot, grade, train) {
   const item = englishRailWords[(day * 2 + slot) % englishRailWords.length];
   const next = englishRailWords[(day * 2 + slot + 1) % englishRailWords.length];
   const another = englishRailWords[(day * 2 + slot + 4) % englishRailWords.length];
-  const mode = (day - 1) % 5;
+  const mode = grade === "grade2" ? (day + 1) % 5 : (day - 1) % 5;
 
   if (mode === 0) {
     return makeChoiceQuestion({
       day,
       slot,
+      grade,
       subject: "英语",
       skill: "词图匹配",
       train,
@@ -283,6 +352,7 @@ function makeBeginnerEnglishContextQuestion(day, slot, train) {
     return makeChoiceQuestion({
       day,
       slot,
+      grade,
       subject: "英语",
       skill: "词义理解",
       train,
@@ -298,6 +368,7 @@ function makeBeginnerEnglishContextQuestion(day, slot, train) {
     return makeChoiceQuestion({
       day,
       slot,
+      grade,
       subject: "英语",
       skill: "固定表达",
       train,
@@ -313,6 +384,7 @@ function makeBeginnerEnglishContextQuestion(day, slot, train) {
     return makeChoiceQuestion({
       day,
       slot,
+      grade,
       subject: "英语",
       skill: "听读对应",
       train,
@@ -327,6 +399,7 @@ function makeBeginnerEnglishContextQuestion(day, slot, train) {
   return makeChoiceQuestion({
     day,
     slot,
+    grade,
     subject: "英语",
     skill: "首字母复现",
     train,
@@ -338,14 +411,15 @@ function makeBeginnerEnglishContextQuestion(day, slot, train) {
   });
 }
 
-function generateQuestion(day, slot) {
+function generateQuestion(day, slot, grade = "grade1") {
+  const config = gradeConfig[grade] || gradeConfig.grade1;
   const train = trainTypes[(day + slot) % trainTypes.length];
   const route = routePool[(day + slot) % routePool.length];
   const word = chineseWords[(day * 3 + slot) % chineseWords.length];
   const base = day * 7 + slot * 5;
-  const a = 12 + ((base * 3) % 68);
-  const b = 5 + ((base * 2) % 28);
-  const c = 3 + ((base + day) % 18);
+  const a = 12 + config.mathBoost + ((base * 3) % (68 - config.mathBoost));
+  const b = 5 + Math.floor(config.mathBoost / 2) + ((base * 2) % 28);
+  const c = 3 + Math.floor(config.mathBoost / 2) + ((base + day) % 18);
   const routeText = `${route[0]}到${route[route.length - 1]}`;
 
   switch (slot) {
@@ -353,6 +427,7 @@ function generateQuestion(day, slot) {
       return makeChoiceQuestion({
         day,
         slot,
+        grade,
         subject: "语文",
         skill: "拼音认读",
         train,
@@ -367,6 +442,7 @@ function generateQuestion(day, slot) {
       return makeChoiceQuestion({
         day,
         slot,
+        grade,
         subject: "语文",
         skill: "部首识字",
         train,
@@ -381,25 +457,36 @@ function generateQuestion(day, slot) {
       return makeChoiceQuestion({
         day,
         slot,
+        grade,
         subject: "语文",
-        skill: "句子表达",
+        skill: grade === "grade2" ? "阅读表达" : "句子表达",
         train,
-        title: `第${day}天 通顺广播`,
-        text: `${routeText}的列车进站了。哪句话最通顺？`,
-        answer: `${trainNames[train]}缓缓开进站台。`,
-        choices: [
-          `${trainNames[train]}缓缓开进站台。`,
-          `站台缓缓开进${trainNames[train]}。`,
-          `开进缓缓站台列车。`,
-          `${trainNames[train]}站台进开缓缓。`
-        ],
-        tip: "通顺的句子一般能清楚说出“谁做什么”。"
+        title: grade === "grade2" ? `第${day}天 阅读广播` : `第${day}天 通顺广播`,
+        text: grade === "grade2"
+          ? `${routeText}的${trainNames[train]}准点进站，乘客排队上车。哪句话概括得最好？`
+          : `${routeText}的列车进站了。哪句话最通顺？`,
+        answer: grade === "grade2" ? "列车准点进站，乘客有序上车。" : `${trainNames[train]}缓缓开进站台。`,
+        choices: grade === "grade2"
+          ? [
+              "列车准点进站，乘客有序上车。",
+              "乘客在车顶检修接触网。",
+              "列车离开轨道飞上天空。",
+              "站台把乘客开进列车。"
+            ]
+          : [
+              `${trainNames[train]}缓缓开进站台。`,
+              `站台缓缓开进${trainNames[train]}。`,
+              `开进缓缓站台列车。`,
+              `${trainNames[train]}站台进开缓缓。`
+            ],
+        tip: grade === "grade2" ? "概括句要抓住主要事情：列车进站，乘客上车。" : "通顺的句子一般能清楚说出“谁做什么”。"
       });
     case 3: {
       const answer = a + b;
       return makeChoiceQuestion({
         day,
         slot,
+        grade,
         subject: "数学",
         skill: "100以内加法",
         train,
@@ -417,6 +504,7 @@ function generateQuestion(day, slot) {
       return makeChoiceQuestion({
         day,
         slot,
+        grade,
         subject: "数学",
         skill: "100以内减法",
         train,
@@ -434,6 +522,7 @@ function generateQuestion(day, slot) {
       return makeChoiceQuestion({
         day,
         slot,
+        grade,
         subject: "数学",
         skill: "比多少",
         train,
@@ -445,13 +534,14 @@ function generateQuestion(day, slot) {
       });
     }
     case 6: {
-      const start = 20 + ((day * 4 + slot) % 45);
-      const add = 6 + ((day + slot) % 18);
+      const start = 20 + config.mathBoost + ((day * 4 + slot) % 45);
+      const add = 6 + Math.floor(config.mathBoost / 2) + ((day + slot) % 18);
       const remove = 3 + ((day * 2 + slot) % 15);
       const answer = start + add - remove;
       return makeChoiceQuestion({
         day,
         slot,
+        grade,
         subject: "数学",
         skill: "两步应用题",
         train,
@@ -463,21 +553,22 @@ function generateQuestion(day, slot) {
       });
     }
     case 7:
-      return makeBeginnerEnglishLetterQuestion(day, slot, train);
+      return makeBeginnerEnglishLetterQuestion(day, slot, grade, train);
     case 8:
-      return makeBeginnerEnglishContextQuestion(day, slot, train);
+      return makeBeginnerEnglishContextQuestion(day, slot, grade, train);
     default: {
-      const cars = 6 + ((day + slot) % 10);
-      const people = cars * 2 + ((day * 3) % 9);
+      const cars = 6 + (grade === "grade2" ? 2 : 0) + ((day + slot) % 10);
+      const people = cars * (grade === "grade2" ? 3 : 2) + ((day * 3) % 9);
       const answer = people - cars;
       return makeChoiceQuestion({
         day,
         slot,
+        grade,
         subject: "综合",
-        skill: "综合应用",
+        skill: grade === "grade2" ? "乘加减综合" : "综合应用",
         train,
         title: `第${day}天 小调度员挑战`,
-        text: `${routeText}的${trainNames[train]}有 ${cars} 节模拟车厢。每节先放 2 个座位标记，又多出 ${people - cars * 2} 个备用标记。标记总数比车厢数多多少？`,
+        text: `${routeText}的${trainNames[train]}有 ${cars} 节模拟车厢。每节先放 ${grade === "grade2" ? 3 : 2} 个座位标记，又多出 ${people - cars * (grade === "grade2" ? 3 : 2)} 个备用标记。标记总数比车厢数多多少？`,
         answer,
         choices: mathOptions(answer),
         tip: `先算标记总数 ${people}，再比车厢多多少：${people} - ${cars} = ${answer}。`
@@ -486,8 +577,8 @@ function generateQuestion(day, slot) {
   }
 }
 
-function generateDayQuestions(day) {
-  return Array.from({ length: QUESTIONS_PER_DAY }, (_, slot) => generateQuestion(day, slot));
+function generateDayQuestions(day, grade = activeGrade()) {
+  return Array.from({ length: QUESTIONS_PER_DAY }, (_, slot) => generateQuestion(day, slot, grade));
 }
 
 function pickRoute(day = state.selectedDay) {
@@ -504,6 +595,18 @@ function renderDaySelector() {
   els.daySelect.value = String(state.selectedDay);
 }
 
+function renderProfiles() {
+  const profile = activeProfile();
+  els.profileSelect.innerHTML = state.profiles.map((item) => {
+    const gradeLabel = gradeConfig[item.grade]?.label || gradeConfig.grade1.label;
+    return `<option value="${item.id}">${item.name}｜${gradeLabel}</option>`;
+  }).join("");
+  els.profileSelect.value = profile.id;
+  els.activeGradeSelect.value = profile.grade;
+  els.profileGradeSelect.value = "grade1";
+  els.activeGradeLabel.textContent = gradeConfig[profile.grade]?.label || gradeConfig.grade1.label;
+}
+
 function renderRoute() {
   const route = pickRoute();
   els.routeLabel.textContent = `${route[0]} -> ${route[route.length - 1]}`;
@@ -518,11 +621,12 @@ function renderFacts(active = "cr450") {
 }
 
 function storageKey() {
-  return `railKidsProgress-v2-day-${state.selectedDay}`;
+  const profile = activeProfile();
+  return `railKidsProgress-v3-${profile.id}-${profile.grade}-day-${state.selectedDay}`;
 }
 
 function wrongKey() {
-  return "railKidsWrongbook-v1";
+  return `railKidsWrongbook-v2-${activeProfile().id}`;
 }
 
 function updateProgress() {
@@ -631,9 +735,14 @@ function readWrongbook() {
 
 function addWrongRecord(question, selected) {
   const records = readWrongbook();
+  const profile = activeProfile();
   const record = {
     id: `${question.id}-${Date.now()}`,
     questionId: question.id,
+    profileId: profile.id,
+    profileName: profile.name,
+    grade: profile.grade,
+    gradeLabel: gradeConfig[profile.grade]?.label || gradeConfig.grade1.label,
     date: dateKey(),
     day: question.day,
     subject: question.subject,
@@ -651,11 +760,12 @@ function addWrongRecord(question, selected) {
 
 function renderWrongbook() {
   const records = readWrongbook();
-  els.wrongCount.textContent = records.length ? `已记录 ${records.length} 道错题｜${weakSummary(records)}` : "暂无错题";
+  const profile = activeProfile();
+  els.wrongCount.textContent = records.length ? `${profile.name} 已记录 ${records.length} 道错题｜${weakSummary(records)}` : `${profile.name} 暂无错题`;
   els.wrongList.innerHTML = records.slice(0, 12).map((item) => `
     <article class="wrong-item">
       <strong>${item.subject}｜${item.title}</strong>
-      <span>薄弱项：${item.skill || "未标注"}</span>
+      <span>${item.profileName || profile.name}｜${item.gradeLabel || gradeConfig[item.grade]?.label || ""}｜薄弱项：${item.skill || "未标注"}</span>
       <span>${item.text}</span>
       <span>你的答案：${item.selected}；正确答案：${item.answer}</span>
     </article>
@@ -676,7 +786,11 @@ function weakSummary(records) {
 }
 
 function saveProgress() {
+  const profile = activeProfile();
   const payload = {
+    profileId: profile.id,
+    profileName: profile.name,
+    grade: profile.grade,
     day: state.selectedDay,
     current: state.current,
     correct: state.correct,
@@ -703,16 +817,67 @@ function restoreProgress() {
 
 function loadDay(day) {
   state.selectedDay = Number(day);
-  state.todayQuestions = generateDayQuestions(state.selectedDay);
+  state.todayQuestions = generateDayQuestions(state.selectedDay, activeGrade());
   restoreProgress();
   renderRoute();
   renderQuestion();
 }
 
+function switchProfile(profileId) {
+  if (!state.profiles.some((profile) => profile.id === profileId)) return;
+  state.activeProfileId = profileId;
+  saveProfiles();
+  renderProfiles();
+  loadDay(state.selectedDay);
+  renderWrongbook();
+}
+
+function changeActiveGrade(grade) {
+  if (!gradeConfig[grade]) return;
+  const profile = activeProfile();
+  profile.grade = grade;
+  saveProfiles();
+  renderProfiles();
+  loadDay(state.selectedDay);
+  renderWrongbook();
+}
+
+function addProfile() {
+  const name = els.profileNameInput.value.trim();
+  const grade = els.profileGradeSelect.value;
+  if (!name) {
+    els.profileNameInput.focus();
+    return;
+  }
+  const profile = createProfile(name, grade);
+  state.profiles.push(profile);
+  state.activeProfileId = profile.id;
+  els.profileNameInput.value = "";
+  saveProfiles();
+  renderProfiles();
+  loadDay(state.selectedDay);
+  renderWrongbook();
+}
+
+function initProfiles() {
+  state.profiles = readProfiles();
+  if (!state.profiles.length) {
+    state.profiles = [createProfile("小小调度员", "grade1")];
+  }
+  const savedActiveId = localStorage.getItem(activeProfileKey());
+  state.activeProfileId = state.profiles.some((profile) => profile.id === savedActiveId)
+    ? savedActiveId
+    : state.profiles[0].id;
+  saveProfiles();
+  renderProfiles();
+}
+
 function exportWrongbook() {
   const records = readWrongbook();
+  const profile = activeProfile();
   const payload = {
     exportedAt: new Date().toISOString(),
+    profile,
     storageKey: wrongKey(),
     total: records.length,
     weakSummary: weakSummary(records),
@@ -722,13 +887,14 @@ function exportWrongbook() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `rail-kids-wrongbook-${dateKey()}.json`;
+  link.download = `rail-kids-wrongbook-${profile.name}-${dateKey()}.json`;
   link.click();
   URL.revokeObjectURL(url);
 }
 
 function init() {
   const now = new Date();
+  initProfiles();
   state.selectedDay = activeCycleDay(now);
   els.todayLabel.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
   renderDaySelector();
@@ -738,7 +904,13 @@ function init() {
   document.querySelectorAll(".fact-card").forEach((button) => {
     button.addEventListener("click", () => renderFacts(button.dataset.fact));
   });
+  els.profileSelect.addEventListener("change", () => switchProfile(els.profileSelect.value));
+  els.activeGradeSelect.addEventListener("change", () => changeActiveGrade(els.activeGradeSelect.value));
   els.daySelect.addEventListener("change", () => loadDay(els.daySelect.value));
+  els.addProfileBtn.addEventListener("click", addProfile);
+  els.profileNameInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") addProfile();
+  });
   els.nextBtn.addEventListener("click", nextQuestion);
   els.exportWrongBtn.addEventListener("click", exportWrongbook);
   window.addEventListener("resize", updateProgress);

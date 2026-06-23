@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>小小调度员 | 一年级铁路闯关</title>
+    <title>小小调度员 | 多用户铁路闯关</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -11,7 +11,7 @@
       <section class="stage" aria-labelledby="app-title">
         <header class="topbar">
           <div>
-            <p class="eyebrow">每日 3-5 题</p>
+            <p class="eyebrow">多用户 · 分年级 · 每日 10 题</p>
             <h1 id="app-title">小小调度员</h1>
           </div>
           <div class="day-card" aria-live="polite">
@@ -50,6 +50,31 @@
 
         <section class="dashboard">
           <aside class="mission-panel">
+            <section class="profile-panel" aria-labelledby="profileTitle">
+              <div class="profile-head">
+                <h2 id="profileTitle">学习档案</h2>
+                <span id="activeGradeLabel">一年级</span>
+              </div>
+              <label for="profileSelect">
+                <span>当前用户</span>
+                <select id="profileSelect"></select>
+              </label>
+              <label for="activeGradeSelect">
+                <span>当前年级</span>
+                <select id="activeGradeSelect">
+                  <option value="grade1">一年级</option>
+                  <option value="grade2">二年级预备</option>
+                </select>
+              </label>
+              <div class="profile-create">
+                <input id="profileNameInput" type="text" maxlength="10" placeholder="新用户姓名" />
+                <select id="profileGradeSelect" aria-label="选择年级">
+                  <option value="grade1">一年级</option>
+                  <option value="grade2">二年级预备</option>
+                </select>
+                <button id="addProfileBtn" type="button">添加</button>
+              </div>
+            </section>
             <div class="meter">
               <span>今日进度</span>
               <strong id="scoreLabel">0/0</strong>
