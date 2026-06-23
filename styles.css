@@ -380,6 +380,18 @@ h1 {
   color: var(--ink);
 }
 
+.privacy-note button {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid #cfe0ff;
+  color: var(--blue);
+  background: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .meter {
   display: flex;
   align-items: center;

@@ -127,7 +127,8 @@ const els = {
   factDetail: document.querySelector("#factDetail"),
   wrongCount: document.querySelector("#wrongCount"),
   wrongList: document.querySelector("#wrongList"),
-  exportWrongBtn: document.querySelector("#exportWrongBtn")
+  exportWrongBtn: document.querySelector("#exportWrongBtn"),
+  exportUserDataBtn: document.querySelector("#exportUserDataBtn")
 };
 
 const state = {
@@ -891,6 +892,50 @@ function exportWrongbook() {
   URL.revokeObjectURL(url);
 }
 
+function readProgressForProfile(profile) {
+  const progress = {};
+  Object.keys(gradeConfig).forEach((grade) => {
+    progress[grade] = {};
+    for (let day = 1; day <= CYCLE_DAYS; day += 1) {
+      const key = `railKidsProgress-v3-${profile.id}-${grade}-day-${day}`;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      try {
+        progress[grade][day] = JSON.parse(raw);
+      } catch {
+        progress[grade][day] = { unreadable: true };
+      }
+    }
+  });
+  return progress;
+}
+
+function exportCurrentUserData() {
+  const profile = activeProfile();
+  const wrongbook = readWrongbook();
+  const payload = {
+    schema: "rail-kids-user-data-v1",
+    exportedAt: new Date().toISOString(),
+    privacy: "This file is generated locally by the browser. It is not uploaded to GitHub by the app.",
+    profile,
+    activeGrade: activeGrade(),
+    progress: readProgressForProfile(profile),
+    wrongbook: {
+      storageKey: wrongKey(),
+      total: wrongbook.length,
+      weakSummary: weakSummary(wrongbook),
+      records: wrongbook
+    }
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `rail-kids-user-data-${profile.name}-${dateKey()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function init() {
   const now = new Date();
   initProfiles();
@@ -912,6 +957,7 @@ function init() {
   });
   els.nextBtn.addEventListener("click", nextQuestion);
   els.exportWrongBtn.addEventListener("click", exportWrongbook);
+  els.exportUserDataBtn.addEventListener("click", exportCurrentUserData);
   window.addEventListener("resize", updateProgress);
 }
 
