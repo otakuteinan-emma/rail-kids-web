@@ -76,11 +76,10 @@ const els = {
   answerArea: document.querySelector("#answerArea"),
   feedback: document.querySelector("#feedback"),
   nextBtn: document.querySelector("#nextBtn"),
-  resetBtn: document.querySelector("#resetBtn"),
   factDetail: document.querySelector("#factDetail"),
   wrongCount: document.querySelector("#wrongCount"),
   wrongList: document.querySelector("#wrongList"),
-  clearWrongBtn: document.querySelector("#clearWrongBtn")
+  exportWrongBtn: document.querySelector("#exportWrongBtn")
 };
 
 const state = {
@@ -123,12 +122,13 @@ function hashText(text) {
   return Array.from(text).reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) % 1000003, 7);
 }
 
-function makeChoiceQuestion({ day, slot, subject, train, title, text, answer, choices, tip }) {
+function makeChoiceQuestion({ day, slot, subject, skill, train, title, text, answer, choices, tip }) {
   return {
     id: `D${String(day).padStart(2, "0")}-Q${String(slot + 1).padStart(2, "0")}`,
     day,
     slot,
     subject,
+    skill,
     train,
     title,
     text: `【第${day}天任务】${text}`,
@@ -168,6 +168,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "语文",
+        skill: "拼音认读",
         train,
         title: `第${day}天 拼音调度`,
         text: `${trainNames[train]}今天学习“${word[0]}”。它的拼音是哪一个？`,
@@ -181,6 +182,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "语文",
+        skill: "部首识字",
         train,
         title: `第${day}天 部首检修`,
         text: `在铁路词语“${word[0]}”里，和第一个字最常见的部首相关的是哪一个？`,
@@ -194,6 +196,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "语文",
+        skill: "句子表达",
         train,
         title: `第${day}天 通顺广播`,
         text: `${routeText}的列车进站了。哪句话最通顺？`,
@@ -212,6 +215,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "数学",
+        skill: "100以内加法",
         train,
         title: `第${day}天 编组加法`,
         text: `${trainNames[train]}原来有 ${a} 个检修零件，又送来 ${b} 个，一共有多少个？`,
@@ -228,6 +232,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "数学",
+        skill: "100以内减法",
         train,
         title: `第${day}天 车票减法`,
         text: `调度台有 ${total} 张模拟车票，发给同学 ${used} 张，还剩多少张？`,
@@ -244,6 +249,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "数学",
+        skill: "比多少",
         train,
         title: `第${day}天 比多少`,
         text: `甲站有 ${first} 名小乘客，乙站有 ${second} 名小乘客。人数多的一站比少的一站多多少名？`,
@@ -261,6 +267,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "数学",
+        skill: "两步应用题",
         train,
         title: `第${day}天 两步应用`,
         text: `模型库有 ${start} 个车轮，上午补来 ${add} 个，下午用掉 ${remove} 个，现在有多少个？`,
@@ -274,6 +281,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "英语",
+        skill: "英语词汇",
         train,
         title: `第${day}天 单词广播`,
         text: `列车广播出现单词 “${english[0]}”。它的中文意思是什么？`,
@@ -286,6 +294,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "英语",
+        skill: "英语句型",
         train,
         title: `第${day}天 句子启蒙`,
         text: `想说“这是一列火车”，哪一句最合适？`,
@@ -301,6 +310,7 @@ function generateQuestion(day, slot) {
         day,
         slot,
         subject: "综合",
+        skill: "综合应用",
         train,
         title: `第${day}天 小调度员挑战`,
         text: `${routeText}的${trainNames[train]}有 ${cars} 节模拟车厢。每节先放 2 个座位标记，又多出 ${people - cars * 2} 个备用标记。标记总数比车厢数多多少？`,
@@ -372,7 +382,7 @@ function renderQuestion() {
   els.questionTitle.textContent = question.title;
   els.questionText.textContent = question.text;
   els.feedback.className = "feedback";
-  els.feedback.textContent = state.answered ? "这题已经作答，可以继续下一题。" : "选择答案后，调度台会告诉你原因。";
+  els.feedback.textContent = state.answered ? "这题已经作答并锁定，不能重新选择。" : "每题只有一次作答机会，请想好后再选。";
   els.nextBtn.disabled = !state.answered;
   els.nextBtn.textContent = state.current === state.todayQuestions.length - 1 ? "完成任务" : "下一题";
   renderChoices(question);
@@ -463,6 +473,8 @@ function addWrongRecord(question, selected) {
     date: dateKey(),
     day: question.day,
     subject: question.subject,
+    skill: question.skill,
+    train: question.train,
     title: question.title,
     text: question.text,
     selected,
@@ -475,14 +487,28 @@ function addWrongRecord(question, selected) {
 
 function renderWrongbook() {
   const records = readWrongbook();
-  els.wrongCount.textContent = records.length ? `已记录 ${records.length} 道错题` : "暂无错题";
+  els.wrongCount.textContent = records.length ? `已记录 ${records.length} 道错题｜${weakSummary(records)}` : "暂无错题";
   els.wrongList.innerHTML = records.slice(0, 12).map((item) => `
     <article class="wrong-item">
       <strong>${item.subject}｜${item.title}</strong>
+      <span>薄弱项：${item.skill || "未标注"}</span>
       <span>${item.text}</span>
       <span>你的答案：${item.selected}；正确答案：${item.answer}</span>
     </article>
   `).join("");
+}
+
+function weakSummary(records) {
+  const counts = records.reduce((acc, item) => {
+    const key = item.skill || item.subject || "未标注";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([skill, count]) => `${skill}${count}题`)
+    .join("、");
 }
 
 function saveProgress() {
@@ -519,18 +545,22 @@ function loadDay(day) {
   renderQuestion();
 }
 
-function resetToday() {
-  state.current = 0;
-  state.correct = 0;
-  state.answeredIds = new Set();
-  state.answered = false;
-  localStorage.removeItem(storageKey());
-  renderQuestion();
-}
-
-function clearWrongbook() {
-  localStorage.removeItem(wrongKey());
-  renderWrongbook();
+function exportWrongbook() {
+  const records = readWrongbook();
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    storageKey: wrongKey(),
+    total: records.length,
+    weakSummary: weakSummary(records),
+    records
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `rail-kids-wrongbook-${dateKey()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function init() {
@@ -546,8 +576,7 @@ function init() {
   });
   els.daySelect.addEventListener("change", () => loadDay(els.daySelect.value));
   els.nextBtn.addEventListener("click", nextQuestion);
-  els.resetBtn.addEventListener("click", resetToday);
-  els.clearWrongBtn.addEventListener("click", clearWrongbook);
+  els.exportWrongBtn.addEventListener("click", exportWrongbook);
   window.addEventListener("resize", updateProgress);
 }
 
