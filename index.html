@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小小调度员 | 一年级铁路闯关</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="stage" aria-labelledby="app-title">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">每日 3-5 题</p>
+            <h1 id="app-title">小小调度员</h1>
+          </div>
+          <div class="day-card" aria-live="polite">
+            <span id="todayLabel"></span>
+            <strong id="routeLabel">北京南 -> 上海虹桥</strong>
+          </div>
+        </header>
+
+        <section class="rail-scene" aria-label="列车闯关进度">
+          <div class="skyline" aria-hidden="true">
+            <span class="tower tower-a"></span>
+            <span class="tower tower-b"></span>
+            <span class="tower tower-c"></span>
+            <span class="signal"></span>
+          </div>
+          <div class="track-wrap">
+            <div class="train" id="train" aria-hidden="true">
+              <svg viewBox="0 0 420 118" role="img" aria-label="复兴号列车插画">
+                <path class="train-body" d="M18 74 C35 32, 78 18, 142 18 L355 18 C386 18, 408 42, 408 71 L408 86 C408 96, 400 104, 390 104 L55 104 C30 104, 12 94, 18 74 Z" />
+                <path class="train-nose" d="M18 74 C35 32, 78 18, 142 18 L151 18 C104 35, 76 62, 60 104 L55 104 C30 104, 12 94, 18 74 Z" />
+                <path class="train-stripe" d="M70 83 L392 83" />
+                <g class="windows">
+                  <rect x="134" y="38" width="46" height="22" rx="8" />
+                  <rect x="192" y="38" width="46" height="22" rx="8" />
+                  <rect x="250" y="38" width="46" height="22" rx="8" />
+                  <rect x="308" y="38" width="46" height="22" rx="8" />
+                </g>
+                <circle class="wheel" cx="126" cy="103" r="10" />
+                <circle class="wheel" cx="324" cy="103" r="10" />
+              </svg>
+            </div>
+            <div class="rails" aria-hidden="true"></div>
+            <ol class="stations" id="stations"></ol>
+          </div>
+        </section>
+
+        <section class="dashboard">
+          <aside class="mission-panel">
+            <div class="meter">
+              <span>今日进度</span>
+              <strong id="scoreLabel">0/0</strong>
+            </div>
+            <label class="day-picker" for="daySelect">
+              <span>训练日期</span>
+              <select id="daySelect"></select>
+            </label>
+            <div class="facts">
+              <h2>车辆图鉴</h2>
+              <button class="fact-card active" type="button" data-fact="cr450">
+                <span>CR450</span>
+                <strong>新一代高速动车组</strong>
+              </button>
+              <button class="fact-card" type="button" data-fact="cr400">
+                <span>复兴号 CR400</span>
+                <strong>350 km/h 运营主力</strong>
+              </button>
+              <button class="fact-card" type="button" data-fact="diesel">
+                <span>东风内燃机车</span>
+                <strong>上一代燃油动力</strong>
+              </button>
+              <button class="fact-card" type="button" data-fact="electric">
+                <span>电力机车</span>
+                <strong>牵引客车与货车</strong>
+              </button>
+            </div>
+            <p class="fact-detail" id="factDetail"></p>
+            <section class="wrongbook" aria-labelledby="wrongbookTitle">
+              <div class="wrongbook-head">
+                <h2 id="wrongbookTitle">错题本</h2>
+                <button id="clearWrongBtn" type="button">清空</button>
+              </div>
+              <p id="wrongCount">暂无错题</p>
+              <div class="wrong-list" id="wrongList"></div>
+            </section>
+          </aside>
+
+          <section class="quiz-card" aria-live="polite">
+            <div class="quiz-head">
+              <span class="tag" id="subjectTag">语文</span>
+              <span id="questionCount">第 1 题</span>
+            </div>
+            <div class="question-art" id="questionArt" aria-hidden="true"></div>
+            <h2 id="questionTitle"></h2>
+            <p id="questionText"></p>
+            <div class="answer-area" id="answerArea"></div>
+            <div class="feedback" id="feedback" role="status"></div>
+            <div class="actions">
+              <button class="secondary" id="resetBtn" type="button">重做今日题</button>
+              <button class="primary" id="nextBtn" type="button">下一题</button>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
