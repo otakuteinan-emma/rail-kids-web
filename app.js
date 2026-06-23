@@ -112,9 +112,8 @@ const els = {
   scoreLabel: document.querySelector("#scoreLabel"),
   profileSelect: document.querySelector("#profileSelect"),
   activeGradeSelect: document.querySelector("#activeGradeSelect"),
-  profileNameInput: document.querySelector("#profileNameInput"),
-  profileGradeSelect: document.querySelector("#profileGradeSelect"),
-  addProfileBtn: document.querySelector("#addProfileBtn"),
+  activeProfileNameInput: document.querySelector("#activeProfileNameInput"),
+  saveProfileBtn: document.querySelector("#saveProfileBtn"),
   activeGradeLabel: document.querySelector("#activeGradeLabel"),
   daySelect: document.querySelector("#daySelect"),
   subjectTag: document.querySelector("#subjectTag"),
@@ -603,7 +602,7 @@ function renderProfiles() {
   }).join("");
   els.profileSelect.value = profile.id;
   els.activeGradeSelect.value = profile.grade;
-  els.profileGradeSelect.value = "grade1";
+  els.activeProfileNameInput.value = profile.name;
   els.activeGradeLabel.textContent = gradeConfig[profile.grade]?.label || gradeConfig.grade1.label;
 }
 
@@ -842,17 +841,17 @@ function changeActiveGrade(grade) {
   renderWrongbook();
 }
 
-function addProfile() {
-  const name = els.profileNameInput.value.trim();
-  const grade = els.profileGradeSelect.value;
+function saveActiveProfile() {
+  const profile = activeProfile();
+  const name = els.activeProfileNameInput.value.trim();
+  const grade = els.activeGradeSelect.value;
   if (!name) {
-    els.profileNameInput.focus();
+    els.activeProfileNameInput.focus();
     return;
   }
-  const profile = createProfile(name, grade);
-  state.profiles.push(profile);
-  state.activeProfileId = profile.id;
-  els.profileNameInput.value = "";
+  profile.name = name.slice(0, 10);
+  profile.grade = gradeConfig[grade] ? grade : profile.grade;
+  profile.updatedAt = new Date().toISOString();
   saveProfiles();
   renderProfiles();
   loadDay(state.selectedDay);
@@ -907,9 +906,9 @@ function init() {
   els.profileSelect.addEventListener("change", () => switchProfile(els.profileSelect.value));
   els.activeGradeSelect.addEventListener("change", () => changeActiveGrade(els.activeGradeSelect.value));
   els.daySelect.addEventListener("change", () => loadDay(els.daySelect.value));
-  els.addProfileBtn.addEventListener("click", addProfile);
-  els.profileNameInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") addProfile();
+  els.saveProfileBtn.addEventListener("click", saveActiveProfile);
+  els.activeProfileNameInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") saveActiveProfile();
   });
   els.nextBtn.addEventListener("click", nextQuestion);
   els.exportWrongBtn.addEventListener("click", exportWrongbook);

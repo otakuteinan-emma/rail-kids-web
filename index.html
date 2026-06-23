@@ -59,20 +59,23 @@
                 <span>当前用户</span>
                 <select id="profileSelect"></select>
               </label>
-              <label for="activeGradeSelect">
-                <span>当前年级</span>
-                <select id="activeGradeSelect">
-                  <option value="grade1">一年级</option>
-                  <option value="grade2">二年级预备</option>
-                </select>
-              </label>
-              <div class="profile-create">
-                <input id="profileNameInput" type="text" maxlength="10" placeholder="新用户姓名" />
-                <select id="profileGradeSelect" aria-label="选择年级">
-                  <option value="grade1">一年级</option>
-                  <option value="grade2">二年级预备</option>
-                </select>
-                <button id="addProfileBtn" type="button">添加</button>
+              <div class="profile-edit">
+                <label for="activeProfileNameInput">
+                  <span>当前用户姓名</span>
+                  <input id="activeProfileNameInput" type="text" maxlength="10" />
+                </label>
+                <label for="activeGradeSelect">
+                  <span>当前年级</span>
+                  <select id="activeGradeSelect">
+                    <option value="grade1">一年级</option>
+                    <option value="grade2">二年级预备</option>
+                  </select>
+                </label>
+                <button id="saveProfileBtn" type="button">保存当前用户</button>
+              </div>
+              <div class="privacy-note">
+                <strong>本地独立档案</strong>
+                <span>进度和错题只保存在当前浏览器，并按用户隔离。</span>
               </div>
             </section>
             <div class="meter">

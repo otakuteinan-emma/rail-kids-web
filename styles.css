@@ -344,14 +344,14 @@ h1 {
   font-weight: 900;
 }
 
-.profile-create {
+.profile-edit {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
   margin-top: 10px;
 }
 
-.profile-create button {
+.profile-edit button {
   min-height: 42px;
   border-radius: 8px;
   border: 0;
@@ -359,6 +359,25 @@ h1 {
   background: var(--blue);
   font-weight: 900;
   cursor: pointer;
+}
+
+.privacy-note {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f4f7fb;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.privacy-note strong,
+.privacy-note span {
+  display: block;
+}
+
+.privacy-note strong {
+  color: var(--ink);
 }
 
 .meter {
