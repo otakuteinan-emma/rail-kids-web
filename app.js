@@ -11,6 +11,7 @@ const facts = {
 
 const sourceNote = [
   "题型范围参考国家中小学智慧教育平台与义务教育课程标准常见目标。",
+  "英语启蒙参考 Cambridge English Pre-A1、British Council 少儿英语家庭启蒙建议，先做短时、高频、游戏化、图片语境和重复练习。",
   "题目为原创生成，不复制第一试卷网、小猿口算、同步学等第三方题库原题。"
 ];
 
@@ -46,19 +47,46 @@ const chineseWords = [
   ["内燃机", "nei ran ji", "内", "机", "冂"]
 ];
 
-const englishWords = [
-  ["train", "火车"],
-  ["station", "车站"],
-  ["ticket", "车票"],
-  ["fast", "快的"],
-  ["slow", "慢的"],
-  ["old", "旧的"],
-  ["new", "新的"],
-  ["green", "绿色"],
-  ["red", "红色"],
-  ["number", "数字"],
-  ["door", "车门"],
-  ["seat", "座位"]
+const englishLetters = [
+  ["A", "a", "A 像尖尖的车站屋顶"],
+  ["B", "b", "B 像两节鼓鼓的车厢"],
+  ["C", "c", "C 像弯弯的铁路弯道"],
+  ["D", "d", "D 像车门 door 的第一个字母"],
+  ["E", "e", "E 像电力 electric 的第一个字母"],
+  ["F", "f", "F 像快车 fast 的第一个字母"],
+  ["G", "g", "G 像绿色 green 的第一个字母"],
+  ["H", "h", "H 像高铁站的两根柱子"],
+  ["I", "i", "I 像一根信号杆"],
+  ["J", "j", "J 像弯下去的挂钩"],
+  ["K", "k", "K 像道岔分开的样子"],
+  ["L", "l", "L 像站台边的直角"],
+  ["M", "m", "M 像山里的铁路桥"],
+  ["N", "n", "N 像新车 new 的第一个字母"],
+  ["O", "o", "O 像圆圆的车轮"],
+  ["P", "p", "P 像站牌 platform 的第一个字母"],
+  ["Q", "q", "Q 像带小尾巴的车轮"],
+  ["R", "r", "R 像红色 red 的第一个字母"],
+  ["S", "s", "S 像弯弯的线路"],
+  ["T", "t", "T 像火车 train 的第一个字母"],
+  ["U", "u", "U 像隧道口"],
+  ["V", "v", "V 像两条线路汇合"],
+  ["W", "w", "W 像两座小桥"],
+  ["X", "x", "X 像铁路交叉口"],
+  ["Y", "y", "Y 像三岔路"],
+  ["Z", "z", "Z 像折线线路"]
+];
+
+const englishRailWords = [
+  ["train", "火车", "T", "This is a train.", "这是一列火车。"],
+  ["door", "车门", "D", "Open the door.", "打开车门。"],
+  ["seat", "座位", "S", "This is my seat.", "这是我的座位。"],
+  ["red", "红色", "R", "The signal is red.", "信号灯是红色。"],
+  ["green", "绿色", "G", "The signal is green.", "信号灯是绿色。"],
+  ["fast", "快的", "F", "The train is fast.", "火车很快。"],
+  ["new", "新的", "N", "This is a new train.", "这是一列新火车。"],
+  ["old", "旧的", "O", "This is an old train.", "这是一列旧火车。"],
+  ["ticket", "车票", "T", "Here is a ticket.", "这是一张车票。"],
+  ["station", "车站", "S", "This is a station.", "这是一个车站。"]
 ];
 
 const els = {
@@ -107,7 +135,20 @@ function activeCycleDay(date = new Date()) {
 }
 
 function optionSet(answer, distractors) {
-  return [answer, ...distractors.filter((item) => item !== answer)].slice(0, 4);
+  const fallback = [
+    "A", "B", "C", "D", "a", "b", "c", "d",
+    "火车", "车站", "车票", "座位",
+    "train", "door", "seat", "red", "green", "fast", "new", "old", "ticket", "station"
+  ];
+  const seen = new Set();
+  return [answer, ...distractors, ...fallback]
+    .map(String)
+    .filter((item) => {
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    })
+    .slice(0, 4);
 }
 
 function shuffledByKey(items, key) {
@@ -151,11 +192,156 @@ function mathOptions(answer, span = 12) {
   return [...values].slice(0, 4).map(String);
 }
 
+function makeBeginnerEnglishLetterQuestion(day, slot, train) {
+  const item = englishLetters[(day - 1) % englishLetters.length];
+  const next = englishLetters[day % englishLetters.length];
+  const another = englishLetters[(day + 7) % englishLetters.length];
+  const mode = (day - 1) % 4;
+
+  if (mode === 0) {
+    return makeChoiceQuestion({
+      day,
+      slot,
+      subject: "英语",
+      skill: "字母形状识别",
+      train,
+      title: `第${day}天 字母找同伴`,
+      text: `先不背单词，只看形状。调度牌上是大写字母 ${item[0]}，哪一张卡也是 ${item[0]}？`,
+      answer: item[0],
+      choices: optionSet(item[0], [next[0], another[0], item[1]]),
+      tip: `今天只认一个字母：${item[0]}。${item[2]}。`
+    });
+  }
+
+  if (mode === 1) {
+    return makeChoiceQuestion({
+      day,
+      slot,
+      subject: "英语",
+      skill: "大小写匹配",
+      train,
+      title: `第${day}天 大小写配对`,
+      text: `大写 ${item[0]} 的小写伙伴是哪一个？`,
+      answer: item[1],
+      choices: optionSet(item[1], [next[1], another[1], item[0].toLowerCase() === "l" ? "i" : "l"]),
+      tip: `${item[0]} 和 ${item[1]} 是同一个字母的大小写。`
+    });
+  }
+
+  if (mode === 2) {
+    const railWord = englishRailWords[(day + 2) % englishRailWords.length];
+    return makeChoiceQuestion({
+      day,
+      slot,
+      subject: "英语",
+      skill: "首字母意识",
+      train,
+      title: `第${day}天 单词开头`,
+      text: `家长读一遍 “${railWord[0]}”。这个铁路词的第一个字母已经写在单词开头：${railWord[0][0]}。请选择同一个大写字母。`,
+      answer: railWord[2],
+      choices: optionSet(railWord[2], [next[0], another[0], item[0]]),
+      tip: `${railWord[0]} 是“${railWord[1]}”，开头字母是 ${railWord[2]}。`
+    });
+  }
+
+  return makeChoiceQuestion({
+    day,
+    slot,
+    subject: "英语",
+    skill: "字母顺序感",
+    train,
+    title: `第${day}天 字母排队`,
+    text: `列车编号里有三个字母：${item[0]} ${next[0]} ${another[0]}。哪一个和第一个字母完全一样？`,
+    answer: item[0],
+    choices: optionSet(item[0], [next[0], another[0], englishLetters[(day + 13) % englishLetters.length][0]]),
+    tip: `先会“找一样”，再慢慢学读音和单词。第一个字母是 ${item[0]}。`
+  });
+}
+
+function makeBeginnerEnglishContextQuestion(day, slot, train) {
+  const item = englishRailWords[(day * 2 + slot) % englishRailWords.length];
+  const next = englishRailWords[(day * 2 + slot + 1) % englishRailWords.length];
+  const another = englishRailWords[(day * 2 + slot + 4) % englishRailWords.length];
+  const mode = (day - 1) % 5;
+
+  if (mode === 0) {
+    return makeChoiceQuestion({
+      day,
+      slot,
+      subject: "英语",
+      skill: "词图匹配",
+      train,
+      title: `第${day}天 看图认词`,
+      text: `看铁路图：今天只学一个词，“${item[0]}”表示“${item[1]}”。哪张词卡和 ${item[0]} 完全一样？`,
+      answer: item[0],
+      choices: optionSet(item[0], [next[0], item[0].slice(0, -1), another[0]]),
+      tip: `不用一次背很多，只把 ${item[0]} 和“${item[1]}”连起来。`
+    });
+  }
+
+  if (mode === 1) {
+    return makeChoiceQuestion({
+      day,
+      slot,
+      subject: "英语",
+      skill: "词义理解",
+      train,
+      title: `第${day}天 一个词就够`,
+      text: `铁路词 “${item[0]}” 今天已经配了图。它表示什么？`,
+      answer: item[1],
+      choices: optionSet(item[1], [next[1], another[1], "飞机"]),
+      tip: `${item[0]} = ${item[1]}。零基础先从“一个词配一个图”开始。`
+    });
+  }
+
+  if (mode === 2) {
+    return makeChoiceQuestion({
+      day,
+      slot,
+      subject: "英语",
+      skill: "固定表达",
+      train,
+      title: `第${day}天 短句跟读`,
+      text: `家长读：“${item[3]}” 意思是“${item[4]}”。哪一句和家长读的一模一样？`,
+      answer: item[3],
+      choices: optionSet(item[3], [next[3], item[3].replace(".", ""), another[3]]),
+      tip: `先整体听熟：${item[3]}`
+    });
+  }
+
+  if (mode === 3) {
+    return makeChoiceQuestion({
+      day,
+      slot,
+      subject: "英语",
+      skill: "听读对应",
+      train,
+      title: `第${day}天 听到就指`,
+      text: `家长读 “${item[0]}”。请在四张卡里找到这个词。`,
+      answer: item[0],
+      choices: optionSet(item[0], [next[0], another[0], item[0].split("").reverse().join("")]),
+      tip: `听读对应不要求拼写，先能从几张卡里认出 ${item[0]}。`
+    });
+  }
+
+  return makeChoiceQuestion({
+    day,
+    slot,
+    subject: "英语",
+    skill: "首字母复现",
+    train,
+    title: `第${day}天 字母连单词`,
+    text: `词卡 “${item[0]}” 的第一个字母是 ${item[2]}。哪张卡也用 ${item[2]} 开头？`,
+    answer: item[0],
+    choices: optionSet(item[0], [next[0], another[0], englishRailWords[(day + 6) % englishRailWords.length][0]]),
+    tip: `看到 ${item[2]}，可以想到 ${item[0]}。这是从字母走向单词的第一步。`
+  });
+}
+
 function generateQuestion(day, slot) {
   const train = trainTypes[(day + slot) % trainTypes.length];
   const route = routePool[(day + slot) % routePool.length];
   const word = chineseWords[(day * 3 + slot) % chineseWords.length];
-  const english = englishWords[(day * 5 + slot) % englishWords.length];
   const base = day * 7 + slot * 5;
   const a = 12 + ((base * 3) % 68);
   const b = 5 + ((base * 2) % 28);
@@ -277,31 +463,9 @@ function generateQuestion(day, slot) {
       });
     }
     case 7:
-      return makeChoiceQuestion({
-        day,
-        slot,
-        subject: "英语",
-        skill: "英语词汇",
-        train,
-        title: `第${day}天 单词广播`,
-        text: `列车广播出现单词 “${english[0]}”。它的中文意思是什么？`,
-        answer: english[1],
-        choices: optionSet(english[1], ["火车", "车站", "车票", "快的", "慢的", "新的", "旧的", "绿色", "座位"]),
-        tip: `${english[0]} 的意思是“${english[1]}”。`
-      });
+      return makeBeginnerEnglishLetterQuestion(day, slot, train);
     case 8:
-      return makeChoiceQuestion({
-        day,
-        slot,
-        subject: "英语",
-        skill: "英语句型",
-        train,
-        title: `第${day}天 句子启蒙`,
-        text: `想说“这是一列火车”，哪一句最合适？`,
-        answer: "This is a train.",
-        choices: ["This is a train.", "This are train.", "I am station.", "Train is this a."],
-        tip: "This is a train. 可以表示“这是一列火车”。"
-      });
+      return makeBeginnerEnglishContextQuestion(day, slot, train);
     default: {
       const cars = 6 + ((day + slot) % 10);
       const people = cars * 2 + ((day * 3) % 9);
